@@ -20,6 +20,9 @@ pub use checksum::checksum_of;
 pub use encoder::Encoder;
 pub use decoder::Decoder;
 
+#[cfg(feature = "android")]
+mod android;
+
 use thiserror::Error;
 
 #[derive(Error, Debug)]

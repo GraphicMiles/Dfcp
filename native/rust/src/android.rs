@@ -1,6 +1,8 @@
 //! Android JNI bindings
 //! This module is only compiled when the `android` feature is enabled.
 
+#![cfg(feature = "android")]
+
 use jni::objects::{JClass, JString};
 use jni::sys::{jint, jlong, jstring};
 use jni::JNIEnv;
