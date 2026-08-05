@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PHOTON — Optical Link Test Bench</title>
+<style>
+  :root{
+    --bg:#0a0d0a;
+    --panel:#0f140f;
+    --line:#1c2b1c;
+    --phosphor:#5cf28c;
+    --phosphor-dim:#2f8a52;
+    --amber:#f2b45c;
+    --red:#f26d5c;
+    --ink:#c9d6c9;
+    --ink-dim:#6b7d6b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at top, #0d150d 0%, var(--bg) 60%);
+    color:var(--ink);
+    font-family:'Courier New', ui-monospace, Menlo, monospace;
+    min-height:100vh;
+    padding:24px 16px 60px;
+  }
+  .scanlines{
+    pointer-events:none;
+    position:fixed; inset:0;
+    background:repeating-linear-gradient(
+      to bottom, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px,
+      transparent 1px, transparent 3px
+    );
+    mix-blend-mode:overlay;
+    z-index:50;
+  }
+  header{
+    max-width:920px; margin:0 auto 22px; text-align:left;
+    border-bottom:1px solid var(--line); padding-bottom:14px;
+  }
+  .eyebrow{
+    font-size:11px; letter-spacing:.18em; color:var(--phosphor-dim);
+    text-transform:uppercase; margin-bottom:6px;
+  }
+  h1{
+    font-size:22px; letter-spacing:.04em; margin:0 0 4px;
+    color:var(--phosphor); text-shadow:0 0 12px rgba(92,242,140,0.35);
+    font-weight:700;
+  }
+  .sub{ font-size:12.5px; color:var(--ink-dim); line-height:1.5; max-width:640px;}
+
+  .wrap{ max-width:920px; margin:0 auto; }
+
+  .modebar{ display:flex; gap:8px; margin:20px 0 18px; }
+  .modebtn{
+    flex:1; padding:12px; background:var(--panel); border:1px solid var(--line);
+    color:var(--ink-dim); font-family:inherit; font-size:12px; letter-spacing:.1em;
+    text-transform:uppercase; cursor:pointer; transition:all .15s;
+  }
+  .modebtn.active{ color:var(--phosphor); border-color:var(--phosphor-dim); background:#0d1a10; }
+  .modebtn:hover:not(.active){ color:var(--ink); border-color:#2a3a2a; }
+
+  .panel{
+    background:var(--panel); border:1px solid var(--line); padding:20px;
+    margin-bottom:16px;
+  }
+  .panel-title{
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--phosphor-dim); margin:0 0 14px; display:flex; align-items:center; gap:8px;
+  }
+  .panel-title::before{ content:'▸'; }
+
+  label{ display:block; font-size:11px; color:var(--ink-dim); letter-spacing:.06em; margin-bottom:6px; text-transform:uppercase;}
+  textarea, select{
+    width:100%; background:#080b08; border:1px solid var(--line); color:var(--ink);
+    font-family:inherit; font-size:13px; padding:10px; margin-bottom:14px;
+  }
+  textarea{ min-height:70px; resize:vertical; }
+  select{ cursor:pointer; }
+
+  .row{ display:flex; gap:14px; flex-wrap:wrap; }
+  .row > div{ flex:1; min-width:150px; }
+
+  input[type=range]{ width:100%; accent-color:var(--phosphor-dim); }
+  .rangeval{ font-size:11px; color:var(--phosphor); float:right; }
+
+  button.action{
+    background:var(--phosphor-dim); color:#04140a; border:none; padding:11px 18px;
+    font-family:inherit; font-size:12px; letter-spacing:.1em; text-transform:uppercase;
+    cursor:pointer; font-weight:700; margin-top:4px;
+  }
+  button.action:hover{ background:var(--phosphor); }
+  button.action:disabled{ background:#1c2b1c; color:#4a5a4a; cursor:not-allowed; }
+  button.ghost{
+    background:transparent; border:1px solid var(--line); color:var(--ink-dim);
+    padding:11px 18px; font-family:inherit; font-size:12px; letter-spacing:.1em;
+    text-transform:uppercase; cursor:pointer; margin-top:4px; margin-left:8px;
+  }
+  button.ghost:hover{ border-color:var(--phosphor-dim); color:var(--phosphor); }
+
+  canvas{ display:block; background:#000; max-width:100%; }
+  #txCanvasWrap, #rxVideoWrap{
+    border:1px solid var(--line); background:#000; position:relative;
+    margin:14px 0; overflow:hidden; display:flex; justify-content:center;
+  }
+  #rxVideoWrap video{ display:block; max-width:100%; }
+  #rxOverlay{ position:absolute; top:0; left:0; cursor:crosshair; }
+
+  .statgrid{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+    gap:1px; background:var(--line); border:1px solid var(--line); margin-top:14px;
+  }
+  .stat{ background:var(--panel); padding:10px 12px; }
+  .stat .k{ font-size:9.5px; color:var(--ink-dim); letter-spacing:.1em; text-transform:uppercase; }
+  .stat .v{ font-size:17px; color:var(--phosphor); margin-top:3px; font-weight:700; }
+  .stat .v.warn{ color:var(--amber); }
+  .stat .v.err{ color:var(--red); }
+
+  .progress{ height:6px; background:#080b08; border:1px solid var(--line); margin-top:12px; overflow:hidden;}
+  .progress > div{ height:100%; background:var(--phosphor-dim); width:0%; transition:width .2s; }
+
+  .hint{ font-size:11.5px; color:var(--ink-dim); line-height:1.6; margin-top:10px; }
+  .hint b{ color:var(--ink); }
+
+  #decodedOut{
+    background:#080b08; border:1px solid var(--line); padding:12px; margin-top:14px;
+    font-size:12.5px; color:var(--ink); white-space:pre-wrap; word-break:break-word;
+    min-height:40px; max-height:200px; overflow-y:auto;
+  }
+  #decodedOut:empty::before{ content:'— awaiting reconstruction —'; color:var(--ink-dim); }
+
+  .badge{
+    display:inline-block; font-size:10px; letter-spacing:.08em; padding:2px 7px;
+    border:1px solid var(--phosphor-dim); color:var(--phosphor); text-transform:uppercase;
+    margin-left:8px; vertical-align:middle;
+  }
+  .badge.off{ border-color:var(--line); color:var(--ink-dim); }
+
+  footer{ max-width:920px; margin:30px auto 0; font-size:11px; color:var(--ink-dim); border-top:1px solid var(--line); padding-top:14px; }
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Channel characterization rig · rev 0.1</div>
+    <h1>PHOTON — Optical Link Test Bench</h1>
+    <div class="sub">
+      Encodes a message into a dense RGB symbol grid on this screen, and decodes it back from a second device's camera through a manual homography correction. Built to measure real symbol-decode reliability and effective throughput over an actual screen→camera channel — not a simulation.
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="modebar">
+    <button class="modebtn active" id="btnModeTx">TX — Transmit</button>
+    <button class="modebtn" id="btnModeRx">RX — Receive</button>
+  </div>
+
+  <!-- ============ TRANSMIT PANEL ============ -->
+  <div id="txPanel">
+    <div class="panel">
+      <p class="panel-title">Message</p>
+      <label>Payload text</label>
+      <textarea id="txText">The optical channel is the message. Rolling shutter, not radio.</textarea>
+
+      <div class="row">
+        <div>
+          <label>Symbol grid density</label>
+          <select id="txDensity">
+            <option value="small">Low — 16×12 (192 cells)</option>
+            <option value="medium" selected>Medium — 24×18 (432 cells)</option>
+            <option value="large">High — 32×24 (768 cells)</option>
+          </select>
+        </div>
+        <div>
+          <label>Display rate — <span class="rangeval" id="fpsVal">8 fps</span></label>
+          <input type="range" id="txFps" min="1" max="30" value="8">
+        </div>
+      </div>
+
+      <button class="action" id="btnTxStart">Start transmission</button>
+      <button class="ghost" id="btnTxStop" disabled>Stop</button>
+
+      <div id="txCanvasWrap"><canvas id="txCanvas" width="800" height="600"></canvas></div>
+
+      <div class="statgrid">
+        <div class="stat"><div class="k">Frame</div><div class="v" id="txFrameIdx">—</div></div>
+        <div class="stat"><div class="k">Payload / frame</div><div class="v" id="txBytesPerFrame">—</div></div>
+        <div class="stat"><div class="k">Total frames</div><div class="v" id="txTotalFrames">—</div></div>
+        <div class="stat"><div class="k">Theoretical rate</div><div class="v" id="txRate">—</div></div>
+      </div>
+      <p class="hint">Point the receiving device's camera at this screen. The four magenta squares in the corners are alignment markers — the receiver needs a clean line of sight to all four.</p>
+    </div>
+  </div>
+
+  <!-- ============ RECEIVE PANEL ============ -->
+  <div id="rxPanel" style="display:none;">
+    <div class="panel">
+      <p class="panel-title">Camera</p>
+      <button class="action" id="btnRxStart">Start camera</button>
+      <button class="ghost" id="btnRxReset">Reset calibration</button>
+      <span class="badge off" id="calBadge">Uncalibrated</span>
+
+      <div id="rxVideoWrap">
+        <video id="rxVideo" autoplay playsinline muted></video>
+        <canvas id="rxOverlay"></canvas>
+      </div>
+      <p class="hint">
+        Click the centers of the four magenta corner markers on the transmitting screen, in order: <b>top-left → top-right → bottom-right → bottom-left</b>. Decoding starts automatically once all four are set.
+      </p>
+
+      <div class="row" style="margin-top:14px;">
+        <div>
+          <label>Receiver grid density (must match transmitter)</label>
+          <select id="rxDensity">
+            <option value="small">Low — 16×12 (192 cells)</option>
+            <option value="medium" selected>Medium — 24×18 (432 cells)</option>
+            <option value="large">High — 32×24 (768 cells)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="statgrid">
+        <div class="stat"><div class="k">Frames decoded</div><div class="v" id="rxFramesOk">0</div></div>
+        <div class="stat"><div class="k">Checksum failures</div><div class="v err" id="rxFramesFail">0</div></div>
+        <div class="stat"><div class="k">Elapsed</div><div class="v" id="rxElapsed">0.0s</div></div>
+        <div class="stat"><div class="k">Measured throughput</div><div class="v warn" id="rxThroughput">—</div></div>
+      </div>
+      <div class="progress"><div id="rxProgressBar"></div></div>
+
+      <label style="margin-top:16px;">Reconstructed message</label>
+      <div id="decodedOut"></div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  This runs entirely in the browser via <b>getUserMedia</b>, so it can't do raw-sensor access, manual exposure lock, or rolling-shutter row demodulation — those need Camera2 / AVFoundation in a native app. What it <i>can</i> measure honestly: symbol density vs. decode error rate, and effective throughput, across real distance / lighting / alignment conditions. Use it to find where reliability breaks down before committing to a density target.
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- shared encoding constants ----------
+  const LEVELS = [40, 105, 170, 235]; // 4 levels per channel -> 2 bits/channel -> 6 bits/cell
+  const DENSITIES = {
+    small:  {w:16, h:12},
+    medium: {w:24, h:18},
+    large:  {w:32, h:24}
+  };
+  const HEADER_CELLS = 4; // idxLow, idxHigh, flags, checksum
+  const CANVAS_W = 800, CANVAS_H = 600, MARGIN = 60;
+  const MARKER_SIZE = 40;
+  const MARKER_COLOR = [255, 0, 255];
+
+  function gridGeom(density){
+    const {w,h} = DENSITIES[density];
+    const gw = CANVAS_W - 2*MARGIN, gh = CANVAS_H - 2*MARGIN;
+    const cellW = gw / w, cellH = gh / h;
+    return {w,h,cellW,cellH};
+  }
+  function cellCenter(geom, col, row){
+    return {
+      x: MARGIN + geom.cellW*(col+0.5),
+      y: MARGIN + geom.cellH*(row+0.5)
+    };
+  }
+  const MARKER_POS = {
+    TL:{x:30,y:30}, TR:{x:CANVAS_W-30,y:30},
+    BR:{x:CANVAS_W-30,y:CANVAS_H-30}, BL:{x:30,y:CANVAS_H-30}
+  };
+
+  function valueToColor(v){
+    return [ LEVELS[(v>>4)&3], LEVELS[(v>>2)&3], LEVELS[v&3] ];
+  }
+  function colorToValue(r,g,b){
+    function nearest(x){
+      let bi=0, bd=1e9;
+      for(let i=0;i<LEVELS.length;i++){ const d=Math.abs(x-LEVELS[i]); if(d<bd){bd=d;bi=i;} }
+      return bi;
+    }
+    return (nearest(r)<<4)|(nearest(g)<<2)|nearest(b);
+  }
+
+  function bytesToFrames(bytes, density){
+    const geom = gridGeom(density);
+    const totalCells = geom.w*geom.h;
+    const payloadCells = totalCells - HEADER_CELLS;
+    const bytesPerFrame = Math.floor(payloadCells*6/8);
+    const frames = [];
+    for(let i=0;i<bytes.length;i+=bytesPerFrame){
+      let chunk = bytes.slice(i, i+bytesPerFrame);
+      if(chunk.length < bytesPerFrame){
+        const padded = new Uint8Array(bytesPerFrame);
+        padded.set(chunk);
+        chunk = padded;
+      }
+      frames.push(chunk);
+    }
+    if(frames.length===0) frames.push(new Uint8Array(bytesPerFrame));
+    return {frames, bytesPerFrame, payloadCells};
+  }
+
+  function frameToValues(chunkBytes, payloadCells){
+    // pack bytes -> bitstream -> 6-bit symbols
+    let bitStr = "";
+    for(const b of chunkBytes) bitStr += b.toString(2).padStart(8,"0");
+    const neededBits = payloadCells*6;
+    while(bitStr.length < neededBits) bitStr += "0";
+    const values = [];
+    for(let i=0;i<neededBits;i+=6){
+      values.push(parseInt(bitStr.substr(i,6),2));
+    }
+    return values;
+  }
+  function valuesToBytes(values){
+    let bitStr = "";
+    for(const v of values) bitStr += v.toString(2).padStart(6,"0");
+    const bytes = [];
+    for(let i=0;i+8<=bitStr.length;i+=8) bytes.push(parseInt(bitStr.substr(i,8),2));
+    return new Uint8Array(bytes);
+  }
+
+  function checksumOf(bytes){
+    let s=0; for(const b of bytes) s=(s+b)&0x3f;
+    return s;
+  }
+
+  // ============================================================
+  // TX
+  // ============================================================
+  const txText = document.getElementById('txText');
+  const txDensity = document.getElementById('txDensity');
+  const txFps = document.getElementById('txFps');
+  const fpsVal = document.getElementById('fpsVal');
+  const btnTxStart = document.getElementById('btnTxStart');
+  const btnTxStop = document.getElementById('btnTxStop');
+  const txCanvas = document.getElementById('txCanvas');
+  const tctx = txCanvas.getContext('2d');
+
+  txFps.addEventListener('input', ()=> fpsVal.textContent = txFps.value + ' fps');
+
+  let txTimer = null, txState = null;
+
+  function buildTxState(){
+    const density = txDensity.value;
+    const msg = txText.value || "";
+    const msgBytes = new TextEncoder().encode(msg);
+    const lenBytes = new Uint8Array(4);
+    new DataView(lenBytes.buffer).setUint32(0, msgBytes.length, false);
+    const fullBytes = new Uint8Array(lenBytes.length + msgBytes.length);
+    fullBytes.set(lenBytes,0); fullBytes.set(msgBytes,4);
+
+    const {frames, bytesPerFrame, payloadCells} = bytesToFrames(fullBytes, density);
+    return {density, frames, bytesPerFrame, payloadCells, geom: gridGeom(density), idx:0};
+  }
+
+  function drawTxFrame(){
+    const s = txState;
+    const geom = s.geom;
+    const chunk = s.frames[s.idx];
+    const isLast = (s.idx === s.frames.length-1) ? 63 : 0;
+    const checksum = checksumOf(chunk);
+    const headerVals = [ s.idx & 0x3f, (s.idx>>6) & 0x3f, isLast, checksum ];
+    const dataVals = frameToValues(chunk, s.payloadCells);
+    const allVals = headerVals.concat(dataVals);
+
+    tctx.fillStyle = '#000'; tctx.fillRect(0,0,CANVAS_W,CANVAS_H);
+
+    let vi = 0;
+    for(let row=0; row<geom.h; row++){
+      for(let col=0; col<geom.w; col++){
+        const v = allVals[vi++];
+        const [r,g,b] = valueToColor(v);
+        tctx.fillStyle = `rgb(${r},${g},${b})`;
+        tctx.fillRect(MARGIN+col*geom.cellW, MARGIN+row*geom.cellH, Math.ceil(geom.cellW)+1, Math.ceil(geom.cellH)+1);
+      }
+    }
+    // markers
+    tctx.fillStyle = `rgb(${MARKER_COLOR.join(',')})`;
+    for(const k of ['TL','TR','BR','BL']){
+      const p = MARKER_POS[k];
+      tctx.fillRect(p.x-MARKER_SIZE/2, p.y-MARKER_SIZE/2, MARKER_SIZE, MARKER_SIZE);
+    }
+
+    document.getElementById('txFrameIdx').textContent = (s.idx+1)+' / '+s.frames.length;
+    document.getElementById('txBytesPerFrame').textContent = s.bytesPerFrame+' B';
+    document.getElementById('txTotalFrames').textContent = s.frames.length;
+    const fps = parseInt(txFps.value,10);
+    const rateKbps = (s.bytesPerFrame*8*fps)/1000;
+    document.getElementById('txRate').textContent = rateKbps.toFixed(1)+' kbps';
+
+    s.idx = (s.idx+1) % s.frames.length;
+  }
+
+  btnTxStart.addEventListener('click', ()=>{
+    txState = buildTxState();
+    drawTxFrame();
+    const fps = parseInt(txFps.value,10);
+    txTimer = setInterval(drawTxFrame, 1000/fps);
+    btnTxStart.disabled = true; btnTxStop.disabled = false;
+    txText.disabled = true; txDensity.disabled = true;
+  });
+  btnTxStop.addEventListener('click', ()=>{
+    clearInterval(txTimer); txTimer=null;
+    btnTxStart.disabled = false; btnTxStop.disabled = true;
+    txText.disabled = false; txDensity.disabled = false;
+  });
+
+  // ============================================================
+  // RX
+  // ============================================================
+  const rxVideo = document.getElementById('rxVideo');
+  const rxOverlay = document.getElementById('rxOverlay');
+  const octx = rxOverlay.getContext('2d');
+  const btnRxStart = document.getElementById('btnRxStart');
+  const btnRxReset = document.getElementById('btnRxReset');
+  const calBadge = document.getElementById('calBadge');
+  const rxDensity = document.getElementById('rxDensity');
+
+  let rxCorners = []; // clicked points in native video pixel space, order TL,TR,BR,BL
+  let sampleCanvas = document.createElement('canvas');
+  let sctx = sampleCanvas.getContext('2d', {willReadFrequently:true});
+  let rxRunning = false;
+  let rxStream = null;
+  let H = null; // homography matrix (3x3, row-major, h[8]=1)
+
+  let rxStats = null; // { framesOk, framesFail, startTime, doneTime, received:Map, totalFrames, msgLen, done }
+
+  async function startCamera(){
+    try{
+      rxStream = await navigator.mediaDevices.getUserMedia({
+        video:{ facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720} },
+        audio:false
+      });
+      rxVideo.srcObject = rxStream;
+      await rxVideo.play();
+      rxVideo.addEventListener('loadedmetadata', sizeOverlay, {once:true});
+      sizeOverlay();
+    }catch(e){
+      alert('Camera access failed: '+e.message);
+    }
+  }
+  function sizeOverlay(){
+    const w = rxVideo.videoWidth || 640, h = rxVideo.videoHeight || 480;
+    rxOverlay.width = w; rxOverlay.height = h;
+    rxOverlay.style.width = rxVideo.clientWidth+'px';
+    rxOverlay.style.height = rxVideo.clientHeight+'px';
+    sampleCanvas.width = w; sampleCanvas.height = h;
+    redrawOverlay();
+  }
+  window.addEventListener('resize', ()=>{ if(rxVideo.videoWidth) sizeOverlay(); });
+
+  function nativePointFromEvent(evt){
+    const rect = rxOverlay.getBoundingClientRect();
+    const scaleX = rxOverlay.width / rect.width;
+    const scaleY = rxOverlay.height / rect.height;
+    return { x:(evt.clientX-rect.left)*scaleX, y:(evt.clientY-rect.top)*scaleY };
+  }
+
+  function refineToMarker(px,py){
+    // search a window around click for magenta centroid
+    const W = sampleCanvas.width, Hh = sampleCanvas.height;
+    if(W===0||Hh===0) return {x:px,y:py};
+    let data;
+    try{ data = sctx.getImageData(0,0,W,Hh).data; }catch(e){ return {x:px,y:py}; }
+    const win = 28;
+    let sx=0,sy=0,n=0;
+    const x0=Math.max(0,px-win), x1=Math.min(W-1,px+win);
+    const y0=Math.max(0,py-win), y1=Math.min(Hh-1,py+win);
+    for(let y=y0;y<=y1;y++){
+      for(let x=x0;x<=x1;x++){
+        const i=(y*W+x)*4;
+        const r=data[i], g=data[i+1], b=data[i+2];
+        if(r>190 && b>190 && g<110){ sx+=x; sy+=y; n++; }
+      }
+    }
+    if(n>10) return {x:sx/n, y:sy/n};
+    return {x:px,y:py};
+  }
+
+  rxOverlay.addEventListener('click', (evt)=>{
+    if(rxCorners.length>=4) return;
+    const p = nativePointFromEvent(evt);
+    const refined = refineToMarker(p.x,p.y);
+    rxCorners.push(refined);
+    redrawOverlay();
+    if(rxCorners.length===4){
+      const geom = gridGeom(rxDensity.value);
+      const src = [MARKER_POS.TL, MARKER_POS.TR, MARKER_POS.BR, MARKER_POS.BL];
+      H = computeHomography(src, rxCorners);
+      calBadge.textContent = 'Calibrated';
+      calBadge.classList.remove('off');
+      startDecodeSession();
+    }
+  });
+
+  function redrawOverlay(){
+    octx.clearRect(0,0,rxOverlay.width, rxOverlay.height);
+    const labels=['TL','TR','BR','BL'];
+    octx.font = '14px monospace';
+    for(let i=0;i<rxCorners.length;i++){
+      const p = rxCorners[i];
+      octx.strokeStyle = '#5cf28c'; octx.lineWidth=2;
+      octx.beginPath(); octx.arc(p.x,p.y,10,0,Math.PI*2); octx.stroke();
+      octx.fillStyle = '#5cf28c';
+      octx.fillText(labels[i], p.x+12, p.y-8);
+    }
+    if(rxCorners.length===4){
+      octx.strokeStyle='rgba(92,242,140,0.5)'; octx.lineWidth=1.5;
+      octx.beginPath();
+      octx.moveTo(rxCorners[0].x, rxCorners[0].y);
+      for(let i=1;i<4;i++) octx.lineTo(rxCorners[i].x, rxCorners[i].y);
+      octx.closePath(); octx.stroke();
+    }
+  }
+
+  btnRxStart.addEventListener('click', startCamera);
+  btnRxReset.addEventListener('click', ()=>{
+    rxCorners = []; H=null;
+    calBadge.textContent='Uncalibrated'; calBadge.classList.add('off');
+    redrawOverlay();
+    rxStats = null;
+    updateRxStatsUI();
+    document.getElementById('decodedOut').textContent = '';
+  });
+
+  // ---- 4-point homography (direct linear transform, closed-form 8x8 solve) ----
+  function computeHomography(src, dst){
+    // Solve for h such that dst = H * src (homogeneous), h[8]=1
+    const A = [];
+    const b = [];
+    for(let i=0;i<4;i++){
+      const {x:sx,y:sy} = src[i];
+      const {x:dx,y:dy} = dst[i];
+      A.push([sx,sy,1,0,0,0,-sx*dx,-sy*dx]); b.push(dx);
+      A.push([0,0,0,sx,sy,1,-sx*dy,-sy*dy]); b.push(dy);
+    }
+    const h = solveLinearSystem(A,b); // length 8
+    return [h[0],h[1],h[2], h[3],h[4],h[5], h[6],h[7],1];
+  }
+  function solveLinearSystem(A,b){
+    // Gaussian elimination, A is 8x8, b length 8
+    const n = A.length;
+    const M = A.map((row,i)=> row.concat([b[i]]));
+    for(let col=0; col<n; col++){
+      let piv = col;
+      for(let r=col+1;r<n;r++) if(Math.abs(M[r][col])>Math.abs(M[piv][col])) piv=r;
+      [M[col],M[piv]] = [M[piv],M[col]];
+      const pv = M[col][col] || 1e-9;
+      for(let c=col;c<=n;c++) M[col][c]/=pv;
+      for(let r=0;r<n;r++){
+        if(r===col) continue;
+        const f = M[r][col];
+        for(let c=col;c<=n;c++) M[r][c]-=f*M[col][c];
+      }
+    }
+    return M.map(row=>row[n]);
+  }
+  function applyH(h, x, y){
+    const w = h[6]*x + h[7]*y + h[8];
+    return { x:(h[0]*x+h[1]*y+h[2])/w, y:(h[3]*x+h[4]*y+h[5])/w };
+  }
+
+  function startDecodeSession(){
+    rxStats = {
+      framesOk:0, framesFail:0, startTime: performance.now(),
+      received: new Map(), totalFrames: null, msgLen:null, done:false
+    };
+    if(!rxRunning){ rxRunning = true; requestAnimationFrame(decodeLoop); }
+  }
+
+  function decodeLoop(){
+    if(!rxRunning){ return; }
+    if(H && rxVideo.videoWidth){
+      sctx.drawImage(rxVideo, 0, 0, sampleCanvas.width, sampleCanvas.height);
+      try{ processFrame(); }catch(e){ /* ignore transient errors */ }
+    }
+    requestAnimationFrame(decodeLoop);
+  }
+
+  function processFrame(){
+    if(!rxStats || rxStats.done) return;
+    const density = rxDensity.value;
+    const geom = gridGeom(density);
+    const totalCells = geom.w*geom.h;
+    const payloadCells = totalCells - HEADER_CELLS;
+    const W = sampleCanvas.width, Hh = sampleCanvas.height;
+    let data;
+    try{ data = sctx.getImageData(0,0,W,Hh).data; }catch(e){ return; }
+
+    function sampleValueAt(col,row){
+      const c = cellCenter(geom, col, row);
+      const p = applyH(H, c.x, c.y);
+      const px = Math.round(p.x), py = Math.round(p.y);
+      if(px<0||py<0||px>=W||py>=Hh) return null;
+      const i = (py*W+px)*4;
+      return colorToValue(data[i], data[i+1], data[i+2]);
+    }
+
+    const vals = [];
+    let vi=0;
+    let bad=false;
+    for(let row=0; row<geom.h && !bad; row++){
+      for(let col=0; col<geom.w; col++){
+        const v = sampleValueAt(col,row);
+        if(v===null){ bad=true; break; }
+        vals.push(v);
+        vi++;
+      }
+    }
+    if(bad || vals.length < HEADER_CELLS) return;
+
+    const idxLow = vals[0], idxHigh = vals[1], flags = vals[2], checksum = vals[3];
+    const frameIdx = idxLow | (idxHigh<<6);
+    const dataVals = vals.slice(HEADER_CELLS);
+    const bytes = valuesToBytes(dataVals);
+    const cs = checksumOf(bytes);
+
+    if(cs !== checksum){
+      rxStats.framesFail++;
+      updateRxStatsUI();
+      return;
+    }
+    if(flags===63) rxStats.totalFrames = frameIdx+1;
+    if(!rxStats.received.has(frameIdx)){
+      rxStats.received.set(frameIdx, bytes);
+      rxStats.framesOk++;
+    }
+    updateRxStatsUI();
+    tryReconstruct();
+  }
+
+  function tryReconstruct(){
+    if(!rxStats.totalFrames) return;
+    for(let i=0;i<rxStats.totalFrames;i++){
+      if(!rxStats.received.has(i)) return;
+    }
+    // all frames present -> assemble
+    let total = [];
+    for(let i=0;i<rxStats.totalFrames;i++){
+      total = total.concat(Array.from(rxStats.received.get(i)));
+    }
+    const buf = new Uint8Array(total);
+    if(buf.length < 4) return;
+    const msgLen = new DataView(buf.buffer, 0, 4).getUint32(0,false);
+    if(buf.length-4 < msgLen) return;
+    const msgBytes = buf.slice(4, 4+msgLen);
+    const text = new TextDecoder().decode(msgBytes);
+    document.getElementById('decodedOut').textContent = text;
+    rxStats.done = true;
+    rxStats.doneTime = performance.now();
+    rxStats.msgLen = msgLen;
+    updateRxStatsUI();
+  }
+
+  function updateRxStatsUI(){
+    if(!rxStats){
+      document.getElementById('rxFramesOk').textContent='0';
+      document.getElementById('rxFramesFail').textContent='0';
+      document.getElementById('rxElapsed').textContent='0.0s';
+      document.getElementById('rxThroughput').textContent='—';
+      document.getElementById('rxProgressBar').style.width='0%';
+      return;
+    }
+    document.getElementById('rxFramesOk').textContent = rxStats.framesOk;
+    document.getElementById('rxFramesFail').textContent = rxStats.framesFail;
+    const now = rxStats.done ? rxStats.doneTime : performance.now();
+    const elapsed = (now - rxStats.startTime)/1000;
+    document.getElementById('rxElapsed').textContent = elapsed.toFixed(1)+'s';
+
+    if(rxStats.totalFrames){
+      const pct = Math.min(100, 100*rxStats.received.size/rxStats.totalFrames);
+      document.getElementById('rxProgressBar').style.width = pct+'%';
+    }
+    if(rxStats.done && rxStats.msgLen!=null && elapsed>0){
+      const kbps = (rxStats.msgLen*8/1000)/elapsed;
+      document.getElementById('rxThroughput').textContent = kbps.toFixed(2)+' kbps (msg complete)';
+    } else {
+      document.getElementById('rxThroughput').textContent = 'decoding…';
+    }
+  }
+
+  // ---------- mode switching ----------
+  const btnModeTx = document.getElementById('btnModeTx');
+  const btnModeRx = document.getElementById('btnModeRx');
+  const txPanel = document.getElementById('txPanel');
+  const rxPanel = document.getElementById('rxPanel');
+  btnModeTx.addEventListener('click', ()=>{
+    btnModeTx.classList.add('active'); btnModeRx.classList.remove('active');
+    txPanel.style.display='block'; rxPanel.style.display='none';
+  });
+  btnModeRx.addEventListener('click', ()=>{
+    btnModeRx.classList.add('active'); btnModeTx.classList.remove('active');
+    rxPanel.style.display='block'; txPanel.style.display='none';
+  });
+
+})();
+</script>
+</body>
+</html>
