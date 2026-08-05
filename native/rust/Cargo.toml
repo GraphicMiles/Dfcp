@@ -1,0 +1,36 @@
+[package]
+name = "photon-core"
+version = "0.1.0"
+edition = "2021"
+description = "Core optical screen-to-camera communication library (Photon Lab)"
+license = "MIT OR Apache-2.0"
+authors = ["GraphicMiles Research"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+image = { version = "0.25", default-features = false, features = ["png"] }
+nalgebra = "0.32"
+rand = "0.8"
+thiserror = "1.0"
+
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
+android_logger = "0.13"
+log = "0.4"
+
+[features]
+default = []
+android = ["jni", "android_logger"]
+
+[[bin]]
+name = "photon-test"
+path = "src/bin/test.rs"
+required-features = []
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

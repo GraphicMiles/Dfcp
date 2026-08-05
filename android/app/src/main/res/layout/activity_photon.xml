@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#0a0d0a">
+
+    <TextView
+        android:id="@+id/titleText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="PHOTON LAB NATIVE"
+        android:textColor="#5cf28c"
+        android:textSize="20sp"
+        android:gravity="center"
+        android:paddingBottom="12dp" />
+
+    <SurfaceView
+        android:id="@+id/surfaceView"
+        android:layout_width="match_parent"
+        android:layout_height="320dp"
+        android:background="#111" />
+
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#c9d6c9"
+        android:textSize="13sp"
+        android:fontFamily="monospace"
+        android:padding="12dp"
+        android:minLines="4" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="12dp">
+
+        <Button
+            android:id="@+id/btnStartTx"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="START TX"
+            android:backgroundTint="#2f8a52"
+            android:textColor="#04140a" />
+
+        <Button
+            android:id="@+id/btnStartRx"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="START RX"
+            android:layout_marginStart="8dp"
+            android:backgroundTint="#1c2b1c"
+            android:textColor="#c9d6c9" />
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnTestCore"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="TEST RUST CORE"
+        android:layout_marginTop="8dp"
+        android:backgroundTint="#3a3a3a"
+        android:textColor="#5cf28c" />
+
+</LinearLayout>
