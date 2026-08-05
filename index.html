@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PHOTON LAB v1 — Optical Communication Research Test Bench</title>
+<style>
+  :root {
+    --bg: #0a0d0a;
+    --panel: #0f140f;
+    --line: #1c2b1c;
+    --phosphor: #5cf28c;
+    --phosphor-dim: #2f8a52;
+    --amber: #f2b45c;
+    --red: #f26d5c;
+    --ink: #c9d6c9;
+    --ink-dim: #6b7d6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: radial-gradient(ellipse at top, #0d150d 0%, var(--bg) 65%);
+    color: var(--ink);
+    font-family: 'Courier New', ui-monospace, Menlo, monospace;
+    min-height: 100vh;
+    padding: 18px 16px 50px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .scanlines {
+    pointer-events: none;
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 3px);
+    z-index: 60; mix-blend-mode: overlay;
+  }
+  header {
+    max-width: 1180px; margin: 0 auto 16px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 12px;
+  }
+  .eyebrow {
+    font-size: 10px; letter-spacing: .2em; color: var(--phosphor-dim);
+    text-transform: uppercase;
+  }
+  h1 {
+    font-size: 21px; margin: 4px 0 2px; color: var(--phosphor);
+    letter-spacing: .03em; font-weight: 700;
+  }
+  .subhead {
+    font-size: 12px; color: var(--ink-dim); max-width: 620px;
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  .grid { display: grid; grid-template-columns: 1fr 380px; gap: 18px; }
+  @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .panel-title {
+    font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--phosphor-dim); margin: 0 0 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .panel-title::before { content: '▸'; }
+
+  .modebar {
+    display: flex; gap: 6px; margin-bottom: 14px;
+  }
+  .modebtn {
+    flex: 1; padding: 9px 14px;
+    background: var(--panel); border: 1px solid var(--line);
+    color: var(--ink-dim); font-family: inherit; font-size: 11px;
+    letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+  }
+  .modebtn.active {
+    color: var(--phosphor); border-color: var(--phosphor-dim);
+    background: #0d1a10;
+  }
+
+  label { display: block; font-size: 10px; color: var(--ink-dim); letter-spacing: .06em; margin-bottom: 3px; text-transform: uppercase; }
+  textarea, select, input[type="text"], input[type="number"] {
+    width: 100%; background: #080b08; border: 1px solid var(--line);
+    color: var(--ink); font-family: inherit; font-size: 13px; padding: 8px 10px; margin-bottom: 10px;
+  }
+  textarea { min-height: 58px; resize: vertical; }
+
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 140px; }
+
+  button.action {
+    background: var(--phosphor-dim); color: #04140a; border: none;
+    padding: 9px 16px; font-family: inherit; font-size: 11px;
+    letter-spacing: .1em; text-transform: uppercase; cursor: pointer; font-weight: 700;
+  }
+  button.action:hover { background: var(--phosphor); }
+  button.action:disabled { background: #1c2b1c; color: #4a5a4a; cursor: not-allowed; }
+  button.ghost {
+    background: transparent; border: 1px solid var(--line); color: var(--ink-dim);
+    padding: 9px 14px; font-family: inherit; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; cursor: pointer;
+  }
+  button.ghost:hover { border-color: var(--phosphor-dim); color: var(--phosphor); }
+
+  canvas { display: block; background: #000; max-width: 100%; image-rendering: pixelated; }
+  #txCanvasWrap, #rxVideoWrap {
+    border: 1px solid var(--line); background: #000;
+    position: relative; margin: 12px 0; overflow: hidden;
+  }
+  #rxVideoWrap video { display: block; width: 100%; }
+  #rxOverlay { position: absolute; top: 0; left: 0; cursor: crosshair; }
+
+  .statgrid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+    gap: 1px; background: var(--line); border: 1px solid var(--line); margin-top: 10px;
+  }
+  .stat { background: var(--panel); padding: 7px 9px; }
+  .stat .k { font-size: 9px; color: var(--ink-dim); letter-spacing: .08em; text-transform: uppercase; }
+  .stat .v { font-size: 15px; color: var(--phosphor); margin-top: 1px; font-weight: 700; }
+  .stat .v.warn { color: var(--amber); }
+  .stat .v.err { color: var(--red); }
+
+  .badge {
+    display: inline-block; font-size: 9px; letter-spacing: .08em;
+    padding: 1px 7px; border: 1px solid var(--phosphor-dim); color: var(--phosphor);
+    text-transform: uppercase; margin-left: 8px; vertical-align: middle;
+  }
+  .badge.off { border-color: var(--line); color: var(--ink-dim); }
+
+  #decodedOut {
+    background: #080b08; border: 1px solid var(--line); padding: 10px;
+    font-size: 12px; color: var(--ink); white-space: pre-wrap; word-break: break-word;
+    min-height: 46px; max-height: 160px; overflow: auto;
+  }
+
+  .hint { font-size: 10.5px; color: var(--ink-dim); line-height: 1.45; margin-top: 8px; }
+  .hint b { color: var(--ink); }
+
+  .dashboard-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  }
+  @media (max-width: 720px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+  .section-title {
+    font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--phosphor-dim); margin: 18px 0 6px;
+  }
+
+  footer {
+    max-width: 1180px; margin: 30px auto 0; font-size: 10px; color: var(--ink-dim);
+    border-top: 1px solid var(--line); padding-top: 12px;
+  }
+
+  .status {
+    font-size: 10px; color: var(--ink-dim); padding: 4px 10px;
+    background: #080b08; border: 1px solid var(--line); display: inline-block;
+  }
+
+  .experiment-bar {
+    display: flex; gap: 8px; align-items: center; margin: 12px 0;
+  }
+  .experiment-bar select { flex: 1; }
+</style>
+</head>
+<body>
+<div class="scanlines"></div>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">OPTICAL CHANNEL CHARACTERIZATION INSTRUMENT · v1.0</div>
+    <h1>PHOTON LAB</h1>
+    <div class="subhead">
+      Research test bench for screen → camera optical communication. 
+      Automatic calibration • Live metrics • Experiment modes • Dataset capture.
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- MODE SWITCH -->
+  <div class="modebar">
+    <button class="modebtn active" id="btnModeTx">TX — TRANSMIT</button>
+    <button class="modebtn" id="btnModeRx">RX — RECEIVE + ANALYZE</button>
+  </div>
+
+  <div class="grid">
+
+    <!-- LEFT COLUMN: TX + RX + EXPERIMENTS -->
+    <div>
+
+      <!-- TX PANEL -->
+      <div id="txPanel">
+        <div class="panel">
+          <p class="panel-title">TRANSMITTER</p>
+
+          <label>Payload</label>
+          <textarea id="txText">The optical channel is the message. Rolling shutter, not radio.</textarea>
+
+          <div class="row">
+            <div>
+              <label>Grid Density</label>
+              <select id="txDensity">
+                <option value="small">Low — 16×12</option>
+                <option value="medium" selected>Medium — 24×18</option>
+                <option value="large">High — 32×24</option>
+                <option value="xlarge">XL — 48×36</option>
+                <option value="xxlarge">XXL — 64×48</option>
+              </select>
+            </div>
+            <div>
+              <label>Frame Rate <span id="txFpsVal" style="float:right;color:#5cf28c">8 fps</span></label>
+              <input type="range" id="txFps" min="1" max="30" value="8" style="width:100%">
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label>Modulation</label>
+              <select id="modulationSelect">
+                <option value="rgb4" selected>RGB 4-level (6-bit)</option>
+                <option value="rgb8">RGB 8-level (9-bit)</option>
+                <option value="mono">Monochrome Intensity</option>
+                <option value="spatial">Spatial Patterns</option>
+                <option value="analog">Experimental Analog</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top:4px">
+            <button class="action" id="btnTxStart">START TRANSMISSION</button>
+            <button class="ghost" id="btnTxStop" disabled>STOP</button>
+          </div>
+
+          <div id="txCanvasWrap">
+            <canvas id="txCanvas" width="800" height="600"></canvas>
+          </div>
+
+          <div class="statgrid">
+            <div class="stat"><div class="k">Frame</div><div class="v" id="txFrameIdx">—</div></div>
+            <div class="stat"><div class="k">Bytes / frame</div><div class="v" id="txBytesPerFrame">—</div></div>
+            <div class="stat"><div class="k">Total frames</div><div class="v" id="txTotalFrames">—</div></div>
+            <div class="stat"><div class="k">Theoretical rate</div><div class="v" id="txRate">—</div></div>
+          </div>
+
+          <p class="hint">Magenta corner markers are always present for automatic detection.</p>
+        </div>
+      </div>
+
+      <!-- RX PANEL -->
+      <div id="rxPanel" style="display:none;">
+        <div class="panel">
+          <p class="panel-title">RECEIVER + CAMERA</p>
+
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+            <button class="action" id="btnRxStart">START CAMERA</button>
+            <button class="ghost" id="btnRxReset">RESET CALIBRATION</button>
+            <span class="badge off" id="calBadge">UNCALIBRATED</span>
+          </div>
+
+          <div id="rxVideoWrap" style="max-width:100%">
+            <video id="rxVideo" autoplay playsinline muted></video>
+            <canvas id="rxOverlay"></canvas>
+          </div>
+
+          <div class="row" style="margin-top:6px">
+            <div>
+              <label>Grid Density (must match TX)</label>
+              <select id="rxDensity">
+                <option value="small">16×12</option>
+                <option value="medium" selected>24×18</option>
+                <option value="large">32×24</option>
+              </select>
+            </div>
+            <div>
+              <label>Manual Distance (m)</label>
+              <input type="number" id="distanceInput" value="0.85" step="0.1" style="width:100%">
+            </div>
+          </div>
+
+          <div class="statgrid">
+            <div class="stat"><div class="k">Frames OK</div><div class="v" id="rxFramesOk">0</div></div>
+            <div class="stat"><div class="k">Checksum Fail</div><div class="v err" id="rxFramesFail">0</div></div>
+            <div class="stat"><div class="k">Elapsed</div><div class="v" id="rxElapsed">0.0s</div></div>
+            <div class="stat"><div class="k">Measured Rate</div><div class="v warn" id="rxThroughput">—</div></div>
+          </div>
+
+          <div style="margin-top:14px">
+            <label>Reconstructed Message</label>
+            <div id="decodedOut"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXPERIMENTS -->
+      <div class="panel">
+        <p class="panel-title">EXPERIMENTS</p>
+
+        <div class="experiment-bar">
+          <select id="experimentSelect"></select>
+          <button class="action" id="btnRunExperiment">RUN</button>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button class="ghost" id="btnExportJSON">Export JSON</button>
+          <button class="ghost" id="btnExportCSV">Export CSV</button>
+          <button class="ghost" id="btnStartDataset">Start AI Dataset Capture</button>
+        </div>
+
+        <div id="statusBar" class="status" style="margin-top:10px">Ready</div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: DASHBOARD -->
+    <div>
+      <div id="dashboardContainer"></div>
+
+      <div class="panel" style="margin-top:14px">
+        <p class="panel-title">RESEARCH NOTES</p>
+        <div style="font-size:10.5px;line-height:1.5;color:#6b7d6b">
+          • Automatic calibration via magenta markers.<br>
+          • All data stays in browser.<br>
+          • Use this to measure real-world limits before building protocol.<br>
+          • Export sessions for future AI training.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<footer>
+  Photon Lab v1 — Measurement platform first. Data collected here determines feasibility of high-speed optical protocols.
+  <br>Refactored from original single-file prototype. Core is portable.
+</footer>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
