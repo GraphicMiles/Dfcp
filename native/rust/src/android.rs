@@ -44,11 +44,12 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_createEncoder(
 /// Encode raw data (text or file bytes)
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_encodeData(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
     ptr: jlong,
     data: JByteArray,
 ) -> jstring {
+    let mut env = env;
     if ptr == 0 {
         return env.new_string(r#"{"error":"null_encoder"}"#).unwrap().into_raw();
     }
@@ -82,13 +83,14 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_encodeData(
 /// Render a real encoded frame as RGB888
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_renderFrame(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
     ptr: jlong,
     frame_idx: jint,
     out_width: jint,
     out_height: jint,
 ) -> jbyteArray {
+    let mut env = env;
     let w = out_width as usize;
     let h = out_height as usize;
 
@@ -153,13 +155,14 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_renderFrame(
 /// Process camera frame (basic analysis for now)
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_processCameraFrame(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
     _decoder_ptr: jlong,
     image: JByteArray,
     width: jint,
     height: jint,
 ) -> jstring {
+    let mut env = env;
     let len = match env.convert_byte_array(&image) {
         Ok(b) => b.len(),
         Err(_) => 0,
