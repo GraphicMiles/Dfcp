@@ -15,11 +15,12 @@ static mut LAST_TOTAL_FRAMES: usize = 0;
 /// Create encoder
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_createEncoder(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
     density_str: JString,
     mode_str: JString,
 ) -> jlong {
+    let mut env = env;
     let density = match env.get_string(&density_str) {
         Ok(s) => Density::from_str(s.to_str().unwrap_or("medium")).unwrap_or(Density::Medium),
         Err(_) => Density::Medium,
