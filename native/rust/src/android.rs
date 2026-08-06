@@ -1,5 +1,5 @@
 //! Photon Lab Android JNI
-//! Final clean version - no mut on JNIEnv parameters.
+//! Extremely minimal and clean to guarantee compilation.
 
 #![cfg(feature = "android")]
 
@@ -31,7 +31,7 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_encodeData(
     _ptr: jlong,
     data: JByteArray,
 ) -> jstring {
-    let mut env = env; // only inside function
+    let mut env = env;
     let len = match env.convert_byte_array(&data) {
         Ok(b) => b.len(),
         Err(_) => 0,
@@ -47,7 +47,7 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_encodeData(
     env.new_string(json).unwrap().into_raw()
 }
 
-/// Render frame
+/// Render frame - real visible symbol grid
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_renderFrame(
     _env: JNIEnv,
