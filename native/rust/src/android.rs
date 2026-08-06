@@ -12,20 +12,27 @@ use crate::modulation::value_to_color;
 
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_createEncoder(
-    _env: JNIEnv,
+    mut env: JNIEnv,
     _class: JClass,
     density_str: JString,
     mode_str: JString,
 ) -> jlong {
-    let density = _env.get_string(density_str).ok()
-        .and_then(|s| Density::from_str(&s.to_str().unwrap_or("medium")))
-        .unwrap_or(Density::Medium);
+    let density = match env.get_string(&density_str) {
+        Ok(s) => {
+            let rust_str = s.to_str().unwrap_or("medium");
+            Density::from_str(rust_str).unwrap_or(Density::Medium)
+        }
+        Err(_) => Density::Medium,
+    };
 
-    let mode = match _env.get_string(mode_str).ok().and_then(|s| s.to_str().ok()) {
-        Some("rgb8") => ModulationMode::Rgb8,
-        Some("mono") => ModulationMode::Mono,
-        Some("spatial") => ModulationMode::Spatial,
-        _ => ModulationMode::Rgb4,
+    let mode = match env.get_string(&mode_str) {
+        Ok(s) => match s.to_str() {
+            Ok("rgb8") => ModulationMode::Rgb8,
+            Ok("mono") => ModulationMode::Mono,
+            Ok("spatial") => ModulationMode::Spatial,
+            _ => ModulationMode::Rgb4,
+        },
+        Err(_) => ModulationMode::Rgb4,
     };
 
     let encoder = Box::new(create_encoder(density, mode));
@@ -34,7 +41,7 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_createEncoder(
 
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_encodeMessage(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _class: JClass,
     ptr: jlong,
     message: JString,
@@ -44,7 +51,10 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_encodeMessage(
     }
 
     let encoder = unsafe { &*(ptr as *const crate::encoder::Encoder) };
-    let msg: String = env.get_string(message).unwrap().into();
+    let msg: String = match env.get_string(&message) {
+        Ok(s) => s.to_str().unwrap_or_default().to_owned(),
+        Err(_) => String::new(),
+    };
 
     let (frames, total, _) = encoder.encode_message(&msg);
 
@@ -58,7 +68,7 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_encodeMessage(
 
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_renderFrame(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _class: JClass,
     ptr: jlong,
     frame_idx: jint,
@@ -86,7 +96,9 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_setHomography(
     decoder_ptr: jlong,
     h0: jlong, h1: jlong, h2: jlong,
     h3: jlong, h4: jlong, h5: jlong,
-    h6: jlong, h7: jlong,
+    h6: jlong, _h7: jlong,
 ) {
     // TODO: implement full decoder JNI
+    // All h* params are currently unused (stub)
+    let _ = (decoder_ptr, h0, h1, h2, h3, h4, h5, h6);
 }
