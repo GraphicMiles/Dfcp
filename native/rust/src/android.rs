@@ -1,5 +1,6 @@
-//! Photon Lab - Android JNI bindings
-//! This file is intentionally minimal to compile reliably under cargo ndk + android feature.
+//! Photon Lab Android JNI
+//! This version is written to compile cleanly with cargo ndk.
+//! Rule: never put `mut` on a JNIEnv parameter at the function signature.
 
 #![cfg(feature = "android")]
 
@@ -8,6 +9,7 @@ use jni::sys::{jint, jlong, jstring};
 use jni::JNIEnv;
 
 use crate::Encoder;
+use crate::Decoder;
 use crate::modulation::{value_to_color, ModulationMode as ModMode};
 
 /// Create encoder
@@ -46,7 +48,7 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_encodeData(
     env.new_string(json).unwrap().into_raw()
 }
 
-/// Render frame - visible symbol grid
+/// Render frame (visible symbol grid)
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_renderFrame(
     env: JNIEnv,
@@ -112,13 +114,14 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_renderFrame(
 /// Process camera frame
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_processCameraFrame(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
     _dec: jlong,
     img: JByteArray,
     w: jint,
     h: jint,
 ) -> jstring {
+    let mut env = env;
     let len = match env.convert_byte_array(&img) {
         Ok(b) => b.len(),
         Err(_) => 0,
