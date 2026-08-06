@@ -25,11 +25,12 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_createEncoder(
 /// Encode data
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_encodeData(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
     _ptr: jlong,
     data: JByteArray,
 ) -> jstring {
+    let mut env = env;
     let len = match env.convert_byte_array(&data) {
         Ok(b) => b.len(),
         Err(_) => 0,
@@ -48,13 +49,14 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_encodeData(
 /// Render frame - visible symbol grid
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_renderFrame(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
     _ptr: jlong,
     frame_idx: jint,
     out_width: jint,
     out_height: jint,
 ) -> jbyteArray {
+    let mut env = env;
     let w = out_width as usize;
     let h = out_height as usize;
     let mut rgb = vec![0u8; w * h * 3];
