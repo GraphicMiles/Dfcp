@@ -1,71 +1,143 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:background="#0a0d0a">
-
-    <TextView
-        android:id="@+id/titleText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="PHOTON LAB NATIVE"
-        android:textColor="#5cf28c"
-        android:textSize="20sp"
-        android:gravity="center"
-        android:paddingBottom="12dp" />
-
-    <SurfaceView
-        android:id="@+id/surfaceView"
-        android:layout_width="match_parent"
-        android:layout_height="320dp"
-        android:background="#111" />
-
-    <TextView
-        android:id="@+id/statusText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textColor="#c9d6c9"
-        android:textSize="13sp"
-        android:fontFamily="monospace"
-        android:padding="12dp"
-        android:minLines="4" />
+    android:background="#0a0d0a"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingTop="12dp">
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Header -->
+        <TextView
+            android:id="@+id/titleText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="PHOTON LAB NATIVE v0.2"
+            android:textColor="#5cf28c"
+            android:textSize="20sp"
+            android:gravity="center"
+            android:paddingBottom="8dp"
+            android:textStyle="bold" />
+
+        <!-- Preview Area -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="320dp"
+            android:layout_marginBottom="12dp">
+
+            <SurfaceView
+                android:id="@+id/surfaceView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#111111" />
+
+            <ImageView
+                android:id="@+id/previewImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="fitCenter"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <!-- Progress -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:max="100"
+            android:progress="0"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Analysis / Stats -->
+        <TextView
+            android:id="@+id/statsText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#c9d6c9"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:padding="10dp"
+            android:background="#111"
+            android:minLines="6"
+            android:text="Stats will appear here during transmission..." />
+
+        <!-- Payload Info -->
+        <TextView
+            android:id="@+id/payloadInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#6b7d6b"
+            android:textSize="11sp"
+            android:paddingTop="6dp"
+            android:text="No file selected" />
+
+        <!-- Controls -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp">
+
+            <Button
+                android:id="@+id/btnPickFile"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="PICK FILE"
+                android:backgroundTint="#2f8a52"
+                android:textColor="#04140a" />
+
+            <Button
+                android:id="@+id/btnStartTx"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="START TX"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="#2f8a52"
+                android:textColor="#04140a" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <Button
+                android:id="@+id/btnStartRx"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="START RX (CAMERA)"
+                android:backgroundTint="#1c2b1c"
+                android:textColor="#c9d6c9" />
+
+            <Button
+                android:id="@+id/btnStop"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="STOP"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="#3a2a2a"
+                android:textColor="#f26d5c" />
+        </LinearLayout>
 
         <Button
-            android:id="@+id/btnStartTx"
-            android:layout_width="0dp"
+            android:id="@+id/btnTestCore"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="START TX"
-            android:backgroundTint="#2f8a52"
-            android:textColor="#04140a" />
-
-        <Button
-            android:id="@+id/btnStartRx"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="START RX"
-            android:layout_marginStart="8dp"
-            android:backgroundTint="#1c2b1c"
-            android:textColor="#c9d6c9" />
+            android:text="TEST RUST CORE"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="#2a2a2a"
+            android:textColor="#5cf28c" />
 
     </LinearLayout>
-
-    <Button
-        android:id="@+id/btnTestCore"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="TEST RUST CORE"
-        android:layout_marginTop="8dp"
-        android:backgroundTint="#3a3a3a"
-        android:textColor="#5cf28c" />
-
-</LinearLayout>
+</ScrollView>
