@@ -18,7 +18,7 @@ use crate::modulation::{value_to_color, ModulationMode as ModMode};
 /// mode: "rgb8" (9 bits) or "rgb4" (6 bits)
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_createEncoder(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _class: JClass,
     density: JString,
     mode: JString,
@@ -50,7 +50,7 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_createEncoder(
 /// Encode data - uses high-speed parameters for 10 Mbps target
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_encodeData(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _class: JClass,
     _ptr: jlong,
     data: JByteArray,
@@ -82,7 +82,7 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_encodeData(
 /// Target: 1-3+ Mbps now, path to 10 Mbps with 60-120 fps + better camera
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_renderFrame(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _class: JClass,
     _ptr: jlong,
     frame_idx: jint,
@@ -147,7 +147,7 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_renderFrame(
 /// Process camera frame
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_processCameraFrame(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _class: JClass,
     _dec: jlong,
     img: JByteArray,
@@ -183,7 +183,7 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_destroyEncoder(
 
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_createDecoder(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _class: JClass,
     density: JString,
     mode: JString,

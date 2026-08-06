@@ -46,6 +46,7 @@ jobs:
           done
           rustup component add rust-src || true
 
+          rustup target add aarch64-linux-android || true
           echo "=== Installed targets ==="
           rustup target list --installed
 
