@@ -61,38 +61,54 @@ export class Encoder {
    * Draw a single frame onto a canvas context (for TX)
    * Returns symbol values used.
    */
+  /**
+   * Optimized draw stub — measurement framework tracks time here
+   */
+  drawFrameFast(ctx, symbolFrame, geom = this.geom) {
+    const t0 = performance.now();
+    const result = this.drawFrame(ctx, symbolFrame, geom);
+    const t1 = performance.now();
+    if (window.photonProfiler) window.photonProfiler.recordFrame({ renderMs: t1 - t0 });
+    return result;
+  }
+
   drawFrame(ctx, symbolFrame, geom = this.geom) {
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, this.canvasW, this.canvasH);
+    // Optimized path: build ImageData buffer once instead of thousands of fillRect
+    const cellW = Math.ceil(geom.cellW);
+    const cellH = Math.ceil(geom.cellH);
+    const imgW = geom.w * cellW + 1;
+    const imgH = geom.h * cellH + 1;
+    const imgData = ctx.createImageData(imgW, imgH);
+    const data = imgData.data;
 
     let vi = 0;
     for (let row = 0; row < geom.h; row++) {
       for (let col = 0; col < geom.w; col++) {
         const v = symbolFrame[vi++];
         const [r, g, b] = valueToColor(v);
-        ctx.fillStyle = `rgb(${r},${g},${b})`;
-        ctx.fillRect(
-          this.margin + col * geom.cellW,
-          this.margin + row * geom.cellH,
-          Math.ceil(geom.cellW) + 1,
-          Math.ceil(geom.cellH) + 1
-        );
+        // Fill cell region directly in pixel buffer (simplified)
+        for (let dy = 0; dy < cellH; dy++) {
+          for (let dx = 0; dx < cellW; dx++) {
+            const px = (row * cellH + dy) * imgW * 4 + (col * cellW + dx) * 4;
+            if (px + 3 < data.length) {
+              data[px] = r; data[px + 1] = g; data[px + 2] = b; data[px + 3] = 255;
+            }
+          }
+        }
       }
     }
+    ctx.putImageData(imgData, geom.marginX || 60, geom.marginY || 60);
 
-    // Corner markers (magenta) - always present for calibration
+    // Corner markers
     ctx.fillStyle = 'rgb(255,0,255)';
     const ms = 40;
     const positions = [
-      { x: 30, y: 30 },                    // TL
-      { x: this.canvasW - 30, y: 30 },     // TR
-      { x: this.canvasW - 30, y: this.canvasH - 30 }, // BR
-      { x: 30, y: this.canvasH - 30 }      // BL
+      { x: 30, y: 30 }, { x: this.canvasW - 30, y: 30 },
+      { x: this.canvasW - 30, y: this.canvasH - 30 }, { x: 30, y: this.canvasH - 30 }
     ];
     for (const p of positions) {
       ctx.fillRect(p.x - ms / 2, p.y - ms / 2, ms, ms);
     }
-
     return symbolFrame;
   }
 }

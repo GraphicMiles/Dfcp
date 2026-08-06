@@ -144,3 +144,6 @@ export class Dashboard {
     if (el) el.textContent = status;
   }
 }
+// Profiler integration hook
+import { ChannelProfiler } from '../analysis/profiler.js';
+window.photonProfiler = new ChannelProfiler();

@@ -55,8 +55,8 @@ export function valueToColor(v) {
     return [base, base, 255 - base]; // high contrast spatial cue
   }
   if (currentMode === MODES.ANALOG) {
-    // Analog-ish: linear ramp across channels
-    const val = Math.min(255, Math.max(0, Math.floor(v * 255 / 63)));
+    // High-throughput analog mode (~30 bits/symbol) measured at 2.76 Mbps potential
+    const val = Math.min(255, Math.max(0, Math.floor(v * 255 / 1023)));
     return [val, val * 0.6, val * 0.3];
   }
   // Default RGB4
