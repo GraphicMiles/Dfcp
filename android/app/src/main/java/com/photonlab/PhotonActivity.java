@@ -87,9 +87,10 @@ public class PhotonActivity extends Activity {
                 int frame = 0;
                 while (isTransmitting) {
                     String renderInfo = PhotonNative.renderFrame(encoderPtr.get(), frame++);
+                    final int currentFrame = frame;  // Create final reference for lambda
                     runOnUiThread(() -> {
                         if (statusText != null) {
-                            statusText.setText("Frame " + frame + "\n" + renderInfo);
+                            statusText.setText("Frame " + currentFrame + "\n" + renderInfo);
                         }
                     });
                     try { Thread.sleep(120); } catch (InterruptedException ignored) {}
