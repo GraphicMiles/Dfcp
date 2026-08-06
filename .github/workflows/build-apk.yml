@@ -104,6 +104,14 @@ jobs:
           echo "=== jniLibs contents ==="
           find app/src/main/jniLibs -type f 2>/dev/null | head -20 || true
 
+      - name: Upload cargo build log (for debugging)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cargo-ndk-build-log
+          path: native/rust/cargo-build.log
+          retention-days: 7
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
