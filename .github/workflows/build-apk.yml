@@ -26,13 +26,13 @@ jobs:
 
       - name: Ensure Android Rust targets (robust)
         run: |
-          echo "Forcing Android target installation..."
-          rustup target add aarch64-linux-android || echo "aarch64 add failed (may already exist)"
-          rustup target add armv7-linux-androideabi || echo "armv7 add failed (may already exist)"
-          echo "=== Currently installed targets ==="
+          echo "Installing Android targets..."
+          rustup target install aarch64-linux-android || rustup target add aarch64-linux-android
+          rustup target install armv7-linux-androideabi || rustup target add armv7-linux-androideabi
+          rustup component add rust-src || true
+          echo "=== Installed targets ==="
           rustup target list --installed
-          # Hard fail if still missing
-          rustup target list --installed | grep -q aarch64-linux-android || (echo "Missing aarch64-linux-android" && exit 1)
+          rustup target list --installed | grep -q aarch64-linux-android || (echo "FATAL: aarch64-linux-android target missing" && exit 1)
 
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1
@@ -45,11 +45,20 @@ jobs:
         working-directory: native/rust
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          CARGO_TERM_COLOR: never
         run: |
           mkdir -p ../../android/app/src/main/jniLibs/arm64-v8a
           mkdir -p ../../android/app/src/main/jniLibs/armeabi-v7a
-          cargo ndk -t arm64-v8a -t armeabi-v7a -o ../../android/app/src/main/jniLibs build --release --features android
+
+          echo "=== Building photon-core for Android ==="
+          cargo ndk -t arm64-v8a -t armeabi-v7a -o ../../android/app/src/main/jniLibs \
+            build --release --features android --verbose 2>&1 | tee cargo-build.log || true
+
+          echo "=== jniLibs contents ==="
           ls -la ../../android/app/src/main/jniLibs/ || true
+
+          echo "=== Build log (last 100 lines) ==="
+          tail -100 cargo-build.log || true
 
       - name: Setup JDK
         uses: actions/setup-java@v4
