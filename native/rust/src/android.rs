@@ -186,3 +186,25 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_destroyEncoder(
         unsafe { let _ = Box::from_raw(ptr as *mut Encoder); }
     }
 }
+
+#[no_mangle]
+pub extern "system" fn Java_com_photonlab_PhotonNative_createDecoder(
+    _env: JNIEnv,
+    _class: JClass,
+    _density_str: JString,
+    _mode_str: JString,
+) -> jlong {
+    let decoder = Box::new(Decoder::new(24, 18, ModMode::Rgb4));
+    Box::into_raw(decoder) as jlong
+}
+
+#[no_mangle]
+pub extern "system" fn Java_com_photonlab_PhotonNative_destroyDecoder(
+    _env: JNIEnv,
+    _class: JClass,
+    ptr: jlong,
+) {
+    if ptr != 0 {
+        unsafe { let _ = Box::from_raw(ptr as *mut Decoder); }
+    }
+}

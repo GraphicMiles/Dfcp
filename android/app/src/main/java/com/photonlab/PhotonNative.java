@@ -5,13 +5,13 @@ public class PhotonNative {
         System.loadLibrary("photon_core");
     }
 
-    // Encoder
+    // === Encoder ===
     public static native long createEncoder(String density, String mode);
     public static native String encodeData(long encoderPtr, byte[] data);
     public static native byte[] renderFrame(long encoderPtr, int frameIdx, int width, int height);
     public static native void destroyEncoder(long encoderPtr);
 
-    // Decoder (basic)
+    // === Decoder / RX ===
     public static native long createDecoder(String density, String mode);
     public static native String processCameraFrame(long decoderPtr, byte[] imageData, int width, int height);
     public static native void destroyDecoder(long decoderPtr);

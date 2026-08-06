@@ -139,5 +139,48 @@
             android:backgroundTint="#2a2a2a"
             android:textColor="#5cf28c" />
 
+        <!-- New Controls -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp">
+
+            <Button
+                android:id="@+id/btnLoopback"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="LOOPBACK TEST"
+                android:backgroundTint="#3a5a3a"
+                android:textColor="#c9d6c9" />
+
+            <Button
+                android:id="@+id/btnExportLog"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="EXPORT JSON LOG"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="#2a3a5a"
+                android:textColor="#c9d6c9" />
+        </LinearLayout>
+
+        <!-- Simple BER Graph -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="BER / Success History"
+            android:textColor="#6b7d6b"
+            android:textSize="10sp"
+            android:paddingTop="8dp" />
+
+        <ImageView
+            android:id="@+id/berGraph"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:background="#111"
+            android:layout_marginTop="4dp" />
+
     </LinearLayout>
 </ScrollView>
