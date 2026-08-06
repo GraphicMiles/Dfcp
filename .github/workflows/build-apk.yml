@@ -15,6 +15,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Nuke Gradle home (GitHub cache service outage workaround)
+        # GitHub's cache backend is returning 400 + "Our services aren't available right now"
+        # for gradle-home, modules-*, jars-*, wrapper dists, etc.
+        # We aggressively delete the entire Gradle home as early as possible.
+        run: |
+          echo "=== NUKING GRADLE HOME (cache outage workaround) ==="
+          rm -rf ~/.gradle || true
+          rm -rf /home/runner/.gradle || true
+          rm -rf ~/.gradle/caches || true
+          rm -rf ~/.gradle/wrapper || true
+          rm -rf ~/.gradle/.setup-gradle || true
+          rm -rf ~/.gradle/notifications || true
+          echo "Gradle home completely removed before any Gradle activity"
+
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@v1
         with:
@@ -88,10 +102,14 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+      - name: Setup Gradle (caching completely DISABLED)
+        uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: wrapper
+          # GitHub cache backend is returning 400 + "services aren't available" for Gradle.
+          # We disable every form of caching from the action.
+          cache-disabled: true
+          gradle-home-cache-cleanup: 'never'
 
       - name: Prepare and validate Gradle wrapper
         working-directory: android
@@ -102,8 +120,11 @@ jobs:
 
       - name: Build Debug APK
         working-directory: android
+        env:
+          # Extra safety: force-disable Gradle caching at the daemon level
+          GRADLE_OPTS: "-Dorg.gradle.caching=false -Dorg.gradle.cache.cleanup=false"
         run: |
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug --stacktrace --no-daemon -Dorg.gradle.caching=false
 
       - name: Debug Gradle outputs (always run)
         working-directory: android
