@@ -231,6 +231,7 @@ async function startCamera() {
     state.rxRunning = true;
     state.telemetry.reset();
     updateRXStats();
+    console.log('%c[RX ACTIVE] Camera stream started — real optical input enabled.', 'color:#5cf28c');
 
     // Auto start calibration loop
     setTimeout(() => {
