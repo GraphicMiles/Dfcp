@@ -21,6 +21,7 @@ import { BrightnessTest } from './experiments/brightnessTest.js';
 import { BlurTest } from './experiments/blurTest.js';
 import { MotionTest } from './experiments/motionTest.js';
 import { DatasetCapture } from './ai/datasetCapture.js';
+import { ExperimentManager } from './experiments/ExperimentManager.js';
 import { createButton, createSelect, createSlider } from './ui/controls.js';
 
 // Global constants
@@ -41,6 +42,7 @@ let state = {
   exporter: null,
   dashboard: null,
   dataset: null,
+  experiment: new ExperimentManager(),
   txTimer: null,
   rxRunning: false,
   currentDensity: 'medium',
@@ -371,10 +373,9 @@ function handleCameraFrame(imageData) {
 
   // Profile decode + BER + latency in real RX pipeline
   if (window.photonProfiler) {
-    const tDecode = performance.now();
     const profileData = {
       frameIdx: frameInfo ? frameInfo.seq : -1,
-      decodeTimeMs: performance.now() - tDecode,
+      decodeTimeMs: performance.now() - (frameInfo ? frameInfo.t0 || performance.now() : performance.now()),
       confidence: success ? 0.95 : 0.3,
       errors: success ? 0 : 1,
       contrast: 0.82,
@@ -383,6 +384,7 @@ function handleCameraFrame(imageData) {
       channel: 'live_camera'
     };
     window.photonProfiler.recordFrame(profileData);
+    state.experiment.recordFrame({ frameIdx: profileData.frameIdx, packetSuccess: success, decodeLatencyMs: profileData.decodeTimeMs, confidence: profileData.confidence });
   }
 
   // Spectrum
