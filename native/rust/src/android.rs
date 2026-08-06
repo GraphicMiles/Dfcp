@@ -1,5 +1,5 @@
-//! Photon Lab Android JNI
-//! Extremely minimal and clean to guarantee compilation.
+//! Photon Lab - Android JNI bindings
+//! This file is intentionally minimal to compile reliably under cargo ndk + android feature.
 
 #![cfg(feature = "android")]
 
@@ -8,7 +8,6 @@ use jni::sys::{jint, jlong, jstring};
 use jni::JNIEnv;
 
 use crate::Encoder;
-use crate::Decoder;
 use crate::modulation::{value_to_color, ModulationMode as ModMode};
 
 /// Create encoder
@@ -26,12 +25,11 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_createEncoder(
 /// Encode data
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_encodeData(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _class: JClass,
     _ptr: jlong,
     data: JByteArray,
 ) -> jstring {
-    let mut env = env;
     let len = match env.convert_byte_array(&data) {
         Ok(b) => b.len(),
         Err(_) => 0,
@@ -47,10 +45,10 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_encodeData(
     env.new_string(json).unwrap().into_raw()
 }
 
-/// Render frame - real visible symbol grid
+/// Render frame - visible symbol grid
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_renderFrame(
-    _env: JNIEnv,
+    mut env: JNIEnv,
     _class: JClass,
     _ptr: jlong,
     frame_idx: jint,
@@ -103,23 +101,22 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_renderFrame(
         }
     }
 
-    let jarr = _env.new_byte_array(rgb.len() as i32).unwrap();
+    let jarr = env.new_byte_array(rgb.len() as i32).unwrap();
     let s: Vec<i8> = rgb.into_iter().map(|b| b as i8).collect();
-    let _ = _env.set_byte_array_region(&jarr, 0, &s);
+    let _ = env.set_byte_array_region(&jarr, 0, &s);
     jarr.into_raw()
 }
 
 /// Process camera frame
 #[no_mangle]
 pub extern "system" fn Java_com_photonlab_PhotonNative_processCameraFrame(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _class: JClass,
     _dec: jlong,
     img: JByteArray,
     w: jint,
     h: jint,
 ) -> jstring {
-    let mut env = env;
     let len = match env.convert_byte_array(&img) {
         Ok(b) => b.len(),
         Err(_) => 0,
