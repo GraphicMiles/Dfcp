@@ -147,3 +147,17 @@ export class Dashboard {
 // Profiler integration hook
 import { ChannelProfiler } from '../analysis/profiler.js';
 window.photonProfiler = new ChannelProfiler();
+/** Live Optical Channel Dashboard graphs */
+export function drawLiveGraph(canvasId, dataPoints, label, color) {
+  const c = document.getElementById(canvasId);
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, c.width, c.height);
+  const max = Math.max(...dataPoints.map(p => p.v), 1);
+  dataPoints.forEach((p, i) => {
+    const x = (i / Math.max(dataPoints.length - 1, 1)) * c.width;
+    const y = c.height - (p.v / max) * (c.height - 10);
+    ctx.fillStyle = color || '#5cf28c';
+    ctx.fillRect(x - 1, y, 3, c.height - y);
+  });
+}
