@@ -1,0 +1,27 @@
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Android build
+android/app/build/
+android/.gradle/
+android/gradle/wrapper/dists/
+*.apk
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+local.properties
+*.iml
+.idea/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.swp
+*~

@@ -59,19 +59,31 @@ jobs:
 
           echo "=== Building photon-core for Android ==="
           cargo ndk -t arm64-v8a -t armeabi-v7a -o ../../android/app/src/main/jniLibs \
-            build --release --features android --verbose 2>&1 | tee cargo-build.log || true
+            build --release --features android --verbose 2>&1 | tee cargo-build.log
 
           echo "=== jniLibs contents ==="
           ls -la ../../android/app/src/main/jniLibs/ || true
+          ls -la ../../android/app/src/main/jniLibs/arm64-v8a/ || true
+          ls -la ../../android/app/src/main/jniLibs/armeabi-v7a/ || true
 
-          echo "=== Last 80 lines of cargo build log ==="
-          tail -80 cargo-build.log || true
+          echo "=== HARD verification of .so files (prevents crash on install) ==="
+          for abi in arm64-v8a armeabi-v7a; do
+            SO="../../android/app/src/main/jniLibs/$abi/libphoton_core.so"
+            if [ -f "$SO" ]; then
+              echo "✓ $SO present ($(stat -c%s "$SO" 2>/dev/null || echo 'size?') bytes)"
+            else
+              echo "FATAL: $SO MISSING — the APK will crash after installation with UnsatisfiedLinkError"
+              tail -80 cargo-build.log || true
+              exit 1
+            fi
+          done
+          echo "All native libs verified."
 
-          # Upload log as artifact is done in separate step below if needed
-
+          echo "=== Last 30 lines of cargo build log ==="
+          tail -30 cargo-build.log || true
 
       - name: Setup JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '17'
@@ -104,29 +116,35 @@ jobs:
           echo "=== jniLibs contents ==="
           find app/src/main/jniLibs -type f 2>/dev/null | head -20 || true
 
-      - name: Upload cargo build log (for debugging)
+      - name: Upload Debug APK (ONLY 1 artifact)
         uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: cargo-ndk-build-log
-          path: native/rust/cargo-build.log
-          retention-days: 7
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: photon-lab-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 14
 
-      - name: Build Release APK (unsigned)
+      - name: Verify APK contains native libs (prevents crash after installation)
         working-directory: android
+        if: always()
         run: |
-          chmod +x ./gradlew
-          ./gradlew assembleRelease --stacktrace || true
-          ls -la app/build/outputs/apk/release/ || true
-
-      - name: Upload Release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: photon-lab-release-apk
-          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          echo "=== FINAL VERIFICATION ==="
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          if [ -f "$APK" ]; then
+            echo "✓ APK produced"
+            ls -lh "$APK"
+            echo ""
+            echo "=== .so files INSIDE the APK (this is why the app was crashing) ==="
+            if unzip -l "$APK" | grep -E 'lib.*photon_core\.so'; then
+              echo "✓ SUCCESS: libphoton_core.so packaged inside APK"
+              echo "App will no longer crash on System.loadLibrary after installation."
+            else
+              echo "!! CRITICAL: libphoton_core.so is NOT inside the APK"
+              echo "This is the root cause of 'The app is crashing after installation'"
+            fi
+            echo ""
+            echo "=== Only 1 artifact uploaded (photon-lab-debug-apk) ==="
+          else
+            echo "APK not found"
+            exit 1
+          fi

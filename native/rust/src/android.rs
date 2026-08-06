@@ -5,7 +5,7 @@
 #![cfg(feature = "android")]
 
 use jni::objects::{JClass, JString, JByteArray};
-use jni::sys::{jint, jlong, jstring};
+use jni::sys::{jint, jlong, jstring, jbyteArray};
 use jni::JNIEnv;
 
 use crate::Encoder;
@@ -32,7 +32,6 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_encodeData(
     _ptr: jlong,
     data: JByteArray,
 ) -> jstring {
-    let mut env = env;
     let len = match env.convert_byte_array(&data) {
         Ok(b) => b.len(),
         Err(_) => 0,
@@ -58,7 +57,6 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_renderFrame(
     out_width: jint,
     out_height: jint,
 ) -> jbyteArray {
-    let mut env = env;
     let w = out_width as usize;
     let h = out_height as usize;
     let mut rgb = vec![0u8; w * h * 3];
@@ -68,13 +66,13 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_renderFrame(
     let cw = w / cols;
     let ch = h / rows;
 
-    for r in 0..rows {
-        for c in 0..cols {
-            let sym = ((r * 11 + c * 3 + frame_idx as usize) % 64) as u16;
+    for row in 0..rows {
+        for col in 0..cols {
+            let sym = ((row * 11 + col * 3 + frame_idx as usize) % 64) as u16;
             let (r, g, b) = value_to_color(sym, ModMode::Rgb4);
 
-            let x0 = c * cw;
-            let y0 = r * ch;
+            let x0 = col * cw;
+            let y0 = row * ch;
 
             for y in y0..(y0 + ch).min(h) {
                 for x in x0..(x0 + cw).min(w) {
@@ -121,7 +119,6 @@ pub extern "system" fn Java_com_photonlab_PhotonNative_processCameraFrame(
     w: jint,
     h: jint,
 ) -> jstring {
-    let mut env = env;
     let len = match env.convert_byte_array(&img) {
         Ok(b) => b.len(),
         Err(_) => 0,
