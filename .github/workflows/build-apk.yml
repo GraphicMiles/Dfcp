@@ -54,20 +54,31 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: wrapper
 
-      - name: Make gradlew executable and build Debug APK
+      - name: Prepare and validate Gradle wrapper
         working-directory: android
         run: |
-          chmod +x ./gradlew
-          ls -la gradlew gradle/wrapper/ || true
+          chmod +x gradlew
+          ls -la gradlew gradle/wrapper/
+          ./gradlew --version || (echo "Wrapper validation failed" && ls -R gradle/)
+
+      - name: Build Debug APK
+        working-directory: android
+        run: |
           ./gradlew assembleDebug --stacktrace
 
-      - name: Debug Gradle outputs
+      - name: Debug Gradle outputs (always run)
         working-directory: android
         if: always()
         run: |
-          find . -name "*.apk" -o -name "*.so" | head -20 || true
-          ls -la app/build/outputs/apk/debug/ || true
+          echo "=== Searching for APKs and native libs ==="
+          find . -name "*.apk" -o -name "*.so" 2>/dev/null | head -30 || true
+          echo "=== Debug APK dir ==="
+          ls -la app/build/outputs/apk/debug/ 2>/dev/null || true
+          echo "=== jniLibs contents ==="
+          find app/src/main/jniLibs -type f 2>/dev/null | head -20 || true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

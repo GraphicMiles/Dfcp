@@ -25,10 +25,7 @@ android {
         }
     }
 
-    externalNativeBuild {
-        // We use prebuilt .so files from cargo-ndk
-    }
-
+    // We use prebuilt .so files produced by cargo-ndk (see jniLibs/)
     sourceSets {
         main {
             jniLibs.srcDirs = ['src/main/jniLibs']
