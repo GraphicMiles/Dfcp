@@ -13,11 +13,14 @@ pub struct Encoder {
 
 impl Encoder {
     pub fn new(grid_w: usize, grid_h: usize, mode: ModulationMode) -> Self {
-        let geom = GridGeom::new((grid_w, grid_h), 800.0, 600.0, 60.0);
+        // Larger canvas for high-density grids
+        let canvas_w = 1200.0;
+        let canvas_h = 900.0;
+        let geom = GridGeom::new((grid_w, grid_h), canvas_w, canvas_h, 40.0);
         Self {
             width: grid_w,
             height: grid_h,
-            margin: 60.0,
+            margin: 40.0,
             geom,
             mode,
         }

@@ -81,8 +81,17 @@ impl Decoder {
 
         let data_vals = &symbols[HEADER_CELLS..];
         let mut bit_str = String::new();
+
+        // Support both 6-bit (Rgb4) and 9-bit (Rgb8) symbols
+        // We use 9-bit packing when symbols >= 64
+        let use_9bit = data_vals.iter().any(|&v| v >= 64);
+
         for &v in data_vals {
-            bit_str.push_str(&format!("{:06b}", v)); // assumes 6-bit for now
+            if use_9bit {
+                bit_str.push_str(&format!("{:09b}", v));
+            } else {
+                bit_str.push_str(&format!("{:06b}", v));
+            }
         }
 
         let mut bytes = Vec::new();

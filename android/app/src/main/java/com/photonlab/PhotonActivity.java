@@ -100,10 +100,13 @@ public class PhotonActivity extends Activity {
         updatePayloadInfo("No payload loaded");
 
         if (encoderPtr.get() == 0) {
-            encoderPtr.set(PhotonNative.createEncoder("medium", "rgb4"));
+            // High-speed mode for 10 Mbps target: 48x36 grid + 9-bit RGB8
+            // === 10 Mbps TARGET MODE ===
+            // 48x36 grid + Rgb8 (9 bits/symbol) + high frame rate
+            encoderPtr.set(PhotonNative.createEncoder("highspeed", "rgb8"));
         }
         if (decoderPtr.get() == 0) {
-            decoderPtr.set(PhotonNative.createDecoder("medium", "rgb4"));
+            decoderPtr.set(PhotonNative.createDecoder("highspeed", "rgb8"));
         }
     }
 
@@ -231,7 +234,10 @@ public class PhotonActivity extends Activity {
                     statsText.setText(analysis);
                 });
 
-                try { Thread.sleep(95); } catch (InterruptedException ignored) {}
+                // === HIGH-SPEED MODE FOR 10 Mbps TARGET ===
+                // 48x36 grid + 9-bit Rgb8 + ~80-100 fps TX
+                // Theoretical: 48*36*9 bits * 90 fps ≈ 1.75 Mbps (with good camera can go higher)
+                try { Thread.sleep(11); } catch (InterruptedException ignored) {}   // ~90 fps target
             }
 
             mainHandler.post(() -> {
