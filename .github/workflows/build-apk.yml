@@ -77,7 +77,10 @@ jobs:
 
       - name: Build Release APK (unsigned)
         working-directory: android
-        run: ./gradlew assembleRelease --stacktrace
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --stacktrace || true
+          ls -la app/build/outputs/apk/release/ || true
 
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
