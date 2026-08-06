@@ -24,11 +24,12 @@ jobs:
       - name: Install cargo-ndk
         run: cargo install cargo-ndk
 
-      - name: Install Android Rust targets
+      - name: Install Android Rust targets (explicit)
         run: |
           rustup target add aarch64-linux-android
           rustup target add armv7-linux-androideabi
-          rustup target list --installed | grep -E 'aarch64-linux-android|armv7-linux-androideabi' || echo "Android targets check"
+          echo "Installed targets:"
+          rustup target list --installed | grep -E 'android' || echo "No android targets listed (may be ok)"
 
       - name: Setup Android NDK
         uses: nttld/setup-ndk@v1
